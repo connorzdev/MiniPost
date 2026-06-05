@@ -1,18 +1,45 @@
+using JasperFx.Aspire;
 using Projects;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
 var keycloak = builder.AddKeycloak("keycloak", 6001).WithDataVolume("post-keycloak-data");
 
-var postgres = builder.AddPostgres("postgres").WithDataVolume("post-postgres-data").WithPgWeb();
+var meilisearch = builder.AddMeilisearch("meilisearch").WithDataVolume("post-meilisearch-data");
 
+var postgres = builder.AddPostgres("postgres").WithDataVolume("post-postgres-data").WithPgWeb();
 var postDb = postgres.AddDatabase("postDb");
+
+var rabbitMq = builder
+    .AddRabbitMQ("messaging")
+    .WithDataVolume("post-rabbitmq-data")
+    .WithManagementPlugin(port: 15672);
 
 var postService = builder
     .AddProject<PostService>("post-service")
     .WithReference(keycloak)
     .WithReference(postDb)
+    .WithReference(rabbitMq)
     .WaitFor(keycloak)
-    .WaitFor(postDb);
+    .WaitFor(postDb)
+    .WaitFor(rabbitMq)
+    .WithJasperFxCommands();
+
+var searchService = builder
+    .AddProject<SearchService>("search-service")
+    .WithReference(meilisearch)
+    .WithReference(rabbitMq)
+    .WaitFor(meilisearch)
+    .WaitFor(rabbitMq)
+    .WithJasperFxCommands();
+
+var gateway = builder
+    .AddYarp("gateway")
+    .WithHostPort(8001)
+    .WithConfiguration(yarp =>
+    {
+        yarp.AddRoute("/posts/{**catch-all}", postService);
+        yarp.AddRoute("/search/{**catch-all}", searchService);
+    });
 
 builder.Build().Run();

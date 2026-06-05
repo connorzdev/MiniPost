@@ -1,31 +1,16 @@
+using Meilisearch;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
-using PostService.Data;
-using Shared.Helper;
+using SearchService.Models;
 using Wolverine;
 using Wolverine.RabbitMQ;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+// Add services to the container.
 builder.Services.AddOpenApi();
 builder.AddServiceDefaults();
-builder
-    .Services.AddAuthentication()
-    .AddKeycloakJwtBearer(
-        serviceName: "keycloak",
-        realm: "post",
-        options =>
-        {
-            options.Audience = "post";
-            if (builder.Environment.IsDevelopment())
-            {
-                options.RequireHttpsMetadata = false;
-            }
-        }
-    );
-
-builder.AddNpgsqlDbContext<PostDbContext>("postDb");
+builder.AddMeilisearchClient("meilisearch");
 
 builder
     .Services.AddOpenTelemetry()
@@ -41,7 +26,13 @@ builder
 builder.Host.UseWolverine(opts =>
 {
     opts.UseRabbitMqUsingNamedConnection("messaging").AutoProvision();
-    opts.PublishAllMessages().ToRabbitExchange("posts");
+    opts.ListenToRabbitQueue(
+        "posts.search",
+        cfg =>
+        {
+            cfg.BindExchange("posts");
+        }
+    );
 });
 
 var app = builder.Build();
@@ -52,12 +43,23 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-app.UseAuthorization();
-
-app.MapControllers();
+app.MapGet(
+    "/search",
+    async (string query, MeilisearchClient meilisearch) =>
+    {
+        try
+        {
+            var index = meilisearch.Index("posts");
+            var results = await index.SearchAsync<SearchPost>(query);
+            return Results.Ok(results.Hits);
+        }
+        catch (Exception e)
+        {
+            return Results.Problem("Meilisearch search failed", e.Message);
+        }
+    }
+);
 
 app.MapDefaultEndpoints();
-
-await app.MigrateDbContextAsync<PostDbContext>();
 
 app.Run();

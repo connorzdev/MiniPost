@@ -1,15 +1,17 @@
 ﻿using System.Security.Claims;
+using Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PostService.Data;
 using PostService.DTOs;
 using PostService.Models;
+using Wolverine;
 
 namespace PostService.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class PostsController(PostDbContext db) : ControllerBase
+public class PostsController(PostDbContext db, IMessageBus bus) : ControllerBase
 {
     [Authorize]
     [HttpPost]
@@ -34,7 +36,9 @@ public class PostsController(PostDbContext db) : ControllerBase
         db.Posts.Add(post);
         await db.SaveChangesAsync();
 
-        // TODO: Add message queue to update elastic search
+        await bus.PublishAsync(
+            new PostCreated(post.Id, post.Title, post.Content, post.CreatedAt, post.PostCategory)
+        );
 
         return Created($"/posts/{post.Id}", post);
     }
