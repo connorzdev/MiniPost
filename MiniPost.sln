@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MiniPost", "MiniPost\MiniPost.csproj", "{FD99AFA0-6AD0-4744-82FF-31966EB84CD4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServiceDefaults", "ServiceDefaults\ServiceDefaults.csproj", "{692F6737-8135-4DC8-B1F1-5F64BF4185EE}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "services", "services", "{135B93A4-9CB8-4AC0-AD5F-8E270B08DFE6}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "common", "common", "{B8088BD6-6A7D-4096-8C3A-E1CB18274A87}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FD99AFA0-6AD0-4744-82FF-31966EB84CD4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FD99AFA0-6AD0-4744-82FF-31966EB84CD4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FD99AFA0-6AD0-4744-82FF-31966EB84CD4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FD99AFA0-6AD0-4744-82FF-31966EB84CD4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{692F6737-8135-4DC8-B1F1-5F64BF4185EE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{692F6737-8135-4DC8-B1F1-5F64BF4185EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{692F6737-8135-4DC8-B1F1-5F64BF4185EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{692F6737-8135-4DC8-B1F1-5F64BF4185EE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
