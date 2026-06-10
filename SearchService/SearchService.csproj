@@ -9,8 +9,8 @@
     <ItemGroup>
         <PackageReference Include="CommunityToolkit.Aspire.Meilisearch" Version="13.4.0" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.8" />
-        <PackageReference Include="WolverineFx.RabbitMQ" Version="6.4.3" />
-        <PackageReference Include="WolverineFx.RuntimeCompilation" Version="6.4.3" />
+    
+  
     </ItemGroup>
 
     <ItemGroup>

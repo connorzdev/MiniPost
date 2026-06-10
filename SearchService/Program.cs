@@ -1,9 +1,6 @@
 using Meilisearch;
-using OpenTelemetry.Resources;
-using OpenTelemetry.Trace;
 using SearchService.Models;
-using Wolverine;
-using Wolverine.RabbitMQ;
+using Shared;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,28 +8,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
 builder.AddServiceDefaults();
 builder.AddMeilisearchClient("meilisearch");
-
-builder
-    .Services.AddOpenTelemetry()
-    .WithTracing(traceBuilder =>
-    {
-        traceBuilder
-            .SetResourceBuilder(
-                ResourceBuilder.CreateDefault().AddService(builder.Environment.ApplicationName)
-            )
-            .AddSource("Wolverine");
-    });
-
-builder.Host.UseWolverine(opts =>
+await builder.UseWolverineWithRabbitMqAsync(opt =>
 {
-    opts.UseRabbitMqUsingNamedConnection("messaging").AutoProvision();
-    opts.ListenToRabbitQueue(
-        "posts.search",
-        cfg =>
-        {
-            cfg.BindExchange("posts");
-        }
-    );
+    opt.ApplicationAssembly = typeof(Program).Assembly;
 });
 
 var app = builder.Build();

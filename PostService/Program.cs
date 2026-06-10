@@ -1,9 +1,11 @@
+using Contracts;
 using Microsoft.AspNetCore.Diagnostics;
-using OpenTelemetry.Resources;
-using OpenTelemetry.Trace;
+using Microsoft.EntityFrameworkCore;
 using PostService.Data;
+using Shared;
 using Shared.Helper;
-using Wolverine;
+using Wolverine.EntityFrameworkCore;
+using Wolverine.Postgresql;
 using Wolverine.RabbitMQ;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -27,23 +29,27 @@ builder
         }
     );
 
-builder.AddNpgsqlDbContext<PostDbContext>("postDb");
+var dbConnectionString =
+    builder.Configuration.GetConnectionString("postDb")
+    ?? throw new Exception("Cannot find post service db connection string");
 
-builder
-    .Services.AddOpenTelemetry()
-    .WithTracing(traceBuilder =>
+builder.Services.AddDbContext<PostDbContext>(
+    opt =>
     {
-        traceBuilder
-            .SetResourceBuilder(
-                ResourceBuilder.CreateDefault().AddService(builder.Environment.ApplicationName)
-            )
-            .AddSource("Wolverine");
-    });
+        opt.UseNpgsql(dbConnectionString);
+    },
+    optionsLifetime: ServiceLifetime.Singleton
+);
 
-builder.Host.UseWolverine(opts =>
+await builder.UseWolverineWithRabbitMqAsync(opt =>
 {
-    opts.UseRabbitMqUsingNamedConnection("messaging").AutoProvision();
-    opts.PublishAllMessages().ToRabbitExchange("posts");
+    opt.ApplicationAssembly = typeof(Program).Assembly;
+    opt.PersistMessagesWithPostgresql(dbConnectionString);
+    opt.UseEntityFrameworkCoreTransactions();
+
+    opt.PublishMessage<PostCreated>().ToRabbitExchange("Contracts.PostCreated").UseDurableOutbox();
+    opt.PublishMessage<PostUpdated>().ToRabbitExchange("Contracts.PostUpdated").UseDurableOutbox();
+    opt.PublishMessage<PostDeleted>().ToRabbitExchange("Contracts.PostDeleted").UseDurableOutbox();
 });
 
 var app = builder.Build();
