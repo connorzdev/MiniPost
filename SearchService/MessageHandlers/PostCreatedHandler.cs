@@ -17,6 +17,7 @@ public class PostCreatedHandler(MeilisearchClient searchClient)
             Content = message.Content,
             CreatedAt = created,
             Category = message.Category,
+            UpdatedAt = created,
         };
 
         var index = searchClient.Index("posts");

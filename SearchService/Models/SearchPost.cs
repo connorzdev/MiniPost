@@ -19,4 +19,7 @@ public class SearchPost
 
     [JsonPropertyName("createdAt")]
     public long CreatedAt { get; set; }
+
+    [JsonPropertyName("updatedAt")]
+    public long UpdatedAt { get; set; }
 }

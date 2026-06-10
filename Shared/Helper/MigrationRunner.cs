@@ -20,7 +20,7 @@ public static class MigrationRunner
             var context = services.GetRequiredService<TContext>();
             await context.Database.MigrateAsync();
         }
-        catch (Exception e)
+        catch (System.Exception e)
         {
             logger.LogError(e, "An error occurred seeding the DB.");
         }
