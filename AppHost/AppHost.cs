@@ -3,9 +3,22 @@ using Projects;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
-var keycloak = builder.AddKeycloak("keycloak", 6001).WithDataVolume("post-keycloak-data");
+var compose = builder
+    .AddDockerComposeEnvironment("production")
+    .WithDashboard(dash => dash.WithHostPort(8080));
 
-var meilisearch = builder.AddMeilisearch("meilisearch").WithDataVolume("post-meilisearch-data");
+var keycloak = builder
+    .AddKeycloak("keycloak", 6001)
+    .WithDataVolume("post-keycloak-data")
+    .WithEnvironment("KC_HTTP_ENABLED", "true")
+    .WithEnvironment("KC_HOSTNAME_STRICT", "false")
+    .WithRealmImport("../infra/realms")
+    .WithExternalHttpEndpoints();
+
+var meilisearch = builder
+    .AddMeilisearch("meilisearch")
+    .WithDataVolume("post-meilisearch-data")
+    .WithExternalHttpEndpoints();
 
 var postgres = builder.AddPostgres("postgres").WithDataVolume("post-postgres-data").WithPgWeb();
 var postDb = postgres.AddDatabase("postDb");
@@ -40,6 +53,7 @@ var gateway = builder
     {
         yarp.AddRoute("/posts/{**catch-all}", postService);
         yarp.AddRoute("/search/{**catch-all}", searchService);
-    });
+    })
+    .WithExternalHttpEndpoints();
 
 builder.Build().Run();

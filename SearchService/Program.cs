@@ -1,6 +1,6 @@
 using Meilisearch;
 using SearchService.Models;
-using Shared;
+using Shared.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 

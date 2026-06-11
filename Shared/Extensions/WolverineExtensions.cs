@@ -5,7 +5,7 @@ using OpenTelemetry.Trace;
 using Wolverine;
 using Wolverine.RabbitMQ;
 
-namespace Shared;
+namespace Shared.Extensions;
 
 public static class WolverineExtensions
 {

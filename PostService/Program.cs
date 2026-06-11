@@ -2,7 +2,7 @@ using Contracts;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using PostService.Data;
-using Shared;
+using Shared.Extensions;
 using Shared.Helper;
 using Wolverine.EntityFrameworkCore;
 using Wolverine.Postgresql;
@@ -14,20 +14,7 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 builder.AddServiceDefaults();
 builder.Services.AddScoped<PostService.Services.PostService>();
-builder
-    .Services.AddAuthentication()
-    .AddKeycloakJwtBearer(
-        serviceName: "keycloak",
-        realm: "post",
-        options =>
-        {
-            options.Audience = "post";
-            if (builder.Environment.IsDevelopment())
-            {
-                options.RequireHttpsMetadata = false;
-            }
-        }
-    );
+builder.Services.AddKeycloakAuthentication();
 
 var dbConnectionString =
     builder.Configuration.GetConnectionString("postDb")
