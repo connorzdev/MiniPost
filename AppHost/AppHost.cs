@@ -1,3 +1,4 @@
+using Aspire.Hosting.Publishing;
 using JasperFx.Aspire;
 using Microsoft.Extensions.Hosting;
 using Projects;
@@ -9,6 +10,7 @@ var compose = builder
     .WithDashboard(dash => dash.WithHostPort(8080));
 
 #pragma warning disable ASPIRECOMPUTE003
+#pragma warning disable ASPIREPIPELINES003
 var registryEndpoint = builder.AddParameterFromConfiguration(
     "registryEndpoint",
     "REGISTRY_ENDPOINT"
@@ -67,6 +69,14 @@ var postService = builder
         }
     )
     .WithContainerRegistry(registry)
+    .WithContainerBuildOptions(context =>
+    {
+        context.TargetPlatform = ContainerTargetPlatform.LinuxArm64;
+    })
+    .WithImagePushOptions(context =>
+    {
+        context.Options.RemoteImageTag = "latest";
+    })
     .WithJasperFxCommands();
 
 var searchService = builder
@@ -82,6 +92,14 @@ var searchService = builder
         }
     )
     .WithContainerRegistry(registry)
+    .WithContainerBuildOptions(context =>
+    {
+        context.TargetPlatform = ContainerTargetPlatform.LinuxArm64;
+    })
+    .WithImagePushOptions(context =>
+    {
+        context.Options.RemoteImageTag = "latest";
+    })
     .WithJasperFxCommands();
 
 var gateway = builder
@@ -107,4 +125,5 @@ if (!builder.Environment.IsDevelopment())
         .WaitFor(gateway);
 }
 #pragma warning restore ASPIRECOMPUTE003
+#pragma warning restore ASPIREPIPELINES003
 builder.Build().Run();
