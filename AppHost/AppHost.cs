@@ -63,7 +63,7 @@ var postService = builder
     .PublishAsDockerComposeService(
         (_, service) =>
         {
-            service.Name = "minipost-post-service";
+            service.Name = "post-service";
         }
     )
     .WithContainerRegistry(registry)
@@ -78,7 +78,7 @@ var searchService = builder
     .PublishAsDockerComposeService(
         (_, service) =>
         {
-            service.Name = "minipost-search-service";
+            service.Name = "search-service";
         }
     )
     .WithContainerRegistry(registry)

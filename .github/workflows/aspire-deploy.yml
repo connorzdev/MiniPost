@@ -42,7 +42,7 @@ jobs:
       - name: Prepare Docker Compose with Aspire
         run: |
           aspire publish \
-          --project AppHost/AppHost.cs
+          --project AppHost/AppHost.csproj \
           --output-path ./aspire-output
 
       - name: Upload Aspire artifacts
