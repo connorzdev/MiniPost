@@ -1,4 +1,5 @@
 using JasperFx.Aspire;
+using Microsoft.Extensions.Hosting;
 using Projects;
 
 var builder = DistributedApplication.CreateBuilder(args);
@@ -7,18 +8,41 @@ var compose = builder
     .AddDockerComposeEnvironment("production")
     .WithDashboard(dash => dash.WithHostPort(8080));
 
+#pragma warning disable ASPIRECOMPUTE003
+var registryEndpoint = builder.AddParameterFromConfiguration(
+    "registryEndpoint",
+    "REGISTRY_ENDPOINT"
+);
+var registryRepository = builder.AddParameterFromConfiguration(
+    "registryRepository",
+    "REGISTRY_REPOSITORY"
+);
+var registry = builder.AddContainerRegistry(
+    "minipost-container-registry",
+    registryEndpoint,
+    registryRepository
+);
+
 var keycloak = builder
     .AddKeycloak("keycloak", 6001)
     .WithDataVolume("post-keycloak-data")
     .WithEnvironment("KC_HTTP_ENABLED", "true")
-    .WithEnvironment("KC_HOSTNAME_STRICT", "false")
-    .WithRealmImport("../infra/realms")
-    .WithExternalHttpEndpoints();
+    .WithEnvironment("KC_HOSTNAME_STRICT", "false");
 
-var meilisearch = builder
-    .AddMeilisearch("meilisearch")
-    .WithDataVolume("post-meilisearch-data")
-    .WithExternalHttpEndpoints();
+if (!builder.Environment.IsDevelopment())
+{
+    keycloak
+        .WithEnvironment("KC_PROXY_HEADERS", "xforwarded")
+        .WithEnvironment("KC_HOSTNAME", "https://id-minipost.connordev.cloud")
+        .WithExternalHttpEndpoints();
+}
+
+var meilisearch = builder.AddMeilisearch("meilisearch").WithDataVolume("post-meilisearch-data");
+
+if (!builder.Environment.IsDevelopment())
+{
+    meilisearch.WithExternalHttpEndpoints();
+}
 
 var postgres = builder.AddPostgres("postgres").WithDataVolume("post-postgres-data").WithPgWeb();
 var postDb = postgres.AddDatabase("postDb");
@@ -36,6 +60,13 @@ var postService = builder
     .WaitFor(keycloak)
     .WaitFor(postDb)
     .WaitFor(rabbitMq)
+    .PublishAsDockerComposeService(
+        (_, service) =>
+        {
+            service.Name = "minipost-post-service";
+        }
+    )
+    .WithContainerRegistry(registry)
     .WithJasperFxCommands();
 
 var searchService = builder
@@ -44,6 +75,13 @@ var searchService = builder
     .WithReference(rabbitMq)
     .WaitFor(meilisearch)
     .WaitFor(rabbitMq)
+    .PublishAsDockerComposeService(
+        (_, service) =>
+        {
+            service.Name = "minipost-search-service";
+        }
+    )
+    .WithContainerRegistry(registry)
     .WithJasperFxCommands();
 
 var gateway = builder
@@ -56,4 +94,17 @@ var gateway = builder
     })
     .WithExternalHttpEndpoints();
 
+if (!builder.Environment.IsDevelopment())
+{
+    var tunnelToken = builder.AddParameter("tunnel-token", secret: true);
+    var tunnel = builder
+        .AddContainer("cloudflared", "cloudflare/cloudflared")
+        .WithArgs("tunnel", "--no-autoupdate", "run", "--token", "${TUNNEL_TOKEN}")
+        .WithEnvironment("TUNNEL_TOKEN", tunnelToken)
+        .WithReference(keycloak)
+        .WithReference(gateway)
+        .WaitFor(keycloak)
+        .WaitFor(gateway);
+}
+#pragma warning restore ASPIRECOMPUTE003
 builder.Build().Run();

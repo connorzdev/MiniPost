@@ -23,6 +23,7 @@ public static class AuthExtensions
                         [
                             "http://localhost:6001/realms/post",
                             "https://localhost:6001/realms/post",
+                            "https://id-minipost.connordev.cloud/realms/post",
                         ],
                     };
                 }
